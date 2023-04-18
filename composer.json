@@ -1,28 +1,30 @@
 {
-    "name": "kreait/php-boilerplate",
-    "description": "A boilerplate for new composer based PHP projects.",
-    "keywords": ["boilerplate", "skeleton"],
+    "name": "redis-labs-modules/predis-magento-cache",
+    "description": "Redis cache backend that implements Zend Cache Backend interface.",
+    "keywords": ["cache", "redis", "magento", "backend"],
     "license": "MIT",
     "require": {
-        "php": "^7.2"
+        "php": "^8.0",
+        "predis/predis": "^v2.1.2",
+        "magento/zend-cache": "^1.16"
     },
     "require-dev": {
-        "phpunit/phpunit": "^8.0",
-        "friendsofphp/php-cs-fixer": "^2.0"
+        "phpunit/phpunit": "^9.5",
+        "friendsofphp/php-cs-fixer": "^3.8"
     },
     "autoload": {
         "psr-4": {
-            "Vendor\\Package\\": "src"
+            "Redis\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Vendor\\Package\\": "tests"
+            "Redis\\": "tests"
         }
     },
     "config": {
         "platform": {
-            "php": "7.2"
+            "php": "8.0"
         },
         "sort-packages": true
     }
