@@ -14,12 +14,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Redis\\": "src"
+            "Redis\\Pmc\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Redis\\": "tests"
+            "Redis\\Pmc\\": "tests"
         }
     },
     "config": {

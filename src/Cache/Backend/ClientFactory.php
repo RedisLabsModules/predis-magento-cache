@@ -1,6 +1,6 @@
 <?php
 
-namespace Redis\Cache\Backend;
+namespace Redis\Pmc\Cache\Backend;
 
 use Predis\Client;
 use Zend_Cache;
