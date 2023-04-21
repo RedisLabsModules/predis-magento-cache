@@ -154,7 +154,6 @@ class Redis extends Zend_Cache_Backend implements Zend_Cache_Backend_ExtendedInt
     protected int $_removeChunkSize = 10000;
     protected bool $_useLua = false;
     protected int $_autoExpireLifetime = 0;
-    protected string $_autoExpirePattern = '/REQEST/';
     protected bool $_autoExpireRefreshOnLoad = false;
 
     /**
@@ -180,17 +179,22 @@ class Redis extends Zend_Cache_Backend implements Zend_Cache_Backend_ExtendedInt
 
         if (isset($options['notMatchingTags'])) {
             $this->_notMatchingTags = (bool) $options['notMatchingTags'];
-            unset($options['notMatchingTags']);
         }
 
         if (isset($options['lifetimelimit'])) {
             $this->_lifetimeLimit = (int) min($options['lifetimelimit'], self::MAX_LIFETIME);
-            unset($options['lifetimelimit']);
         }
 
         if (isset($options['use_lua'])) {
             $this->_useLua = (bool) $options['use_lua'];
-            unset($options['use_lua']);
+        }
+
+        if (isset($options['auto_expire_lifetime'])) {
+            $this->_autoExpireLifetime = (int) $options['auto_expire_lifetime'];
+        }
+
+        if (isset($options['auto_expire_refresh_on_load'])) {
+            $this->_autoExpireRefreshOnLoad = (bool) $options['auto_expire_refresh_on_load'];
         }
 
         $this->setCompressionConfiguration($options);
@@ -358,7 +362,19 @@ class Redis extends Zend_Cache_Backend implements Zend_Cache_Backend_ExtendedInt
             return false;
         }
 
-        return $this->_decodeData($data);
+        $decodedData = $this->_decodeData($data);
+
+        if ($this->_autoExpireLifetime === 0 || !$this->_autoExpireRefreshOnLoad) {
+            return $decodedData;
+        }
+
+        if (!$this->_matchesAutoExpiringPattern($id)) {
+            return $decodedData;
+        }
+
+        $this->_client->expire(self::PREFIX_KEY . $id, min($this->_autoExpireLifetime, self::MAX_LIFETIME));
+
+        return $decodedData;
     }
 
     /**
