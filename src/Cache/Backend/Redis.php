@@ -193,6 +193,10 @@ class Redis extends Zend_Cache_Backend implements Zend_Cache_Backend_ExtendedInt
             $this->_autoExpireLifetime = (int) $options['auto_expire_lifetime'];
         }
 
+        if (isset($options['auto_expire_refresh_on_load'])) {
+            $this->_autoExpireRefreshOnLoad = (bool) $options['auto_expire_refresh_on_load'];
+        }
+
         $this->setCompressionConfiguration($options);
     }
 
