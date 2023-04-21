@@ -8,8 +8,6 @@ use Zend_Cache_Exception;
 
 class ClientFactory
 {
-    public const DEFAULT_PREFIX = 'zc:';
-
     /**
      * Mapping for parameters to match expected configuration.
      *
@@ -37,9 +35,8 @@ class ClientFactory
 
         if (isset($options['server'])) {
             $options = $this->mapOptions($options);
-            $prefix = $options['prefix'] ?? self::DEFAULT_PREFIX;
 
-            return new Client($options, ['prefix' => $prefix]);
+            return new Client($options);
         }
 
         if (isset($options['cluster'])) {
@@ -97,7 +94,6 @@ class ClientFactory
         $parameters = [];
         $options = [
             'cluster' => $clusterConfiguration['driver'] ?? 'redis',
-            'prefix' => $clusterConfiguration['prefix'] ?? self::DEFAULT_PREFIX,
             'parameters' => [
                 'password' => $clusterConfiguration['password'] ?? '',
             ]
@@ -125,7 +121,6 @@ class ClientFactory
         $parameters = [];
         $options = [
             'replication' => $replicationConfiguration['driver'] ?? 'sentinel',
-            'prefix' => $replicationConfiguration['prefix'] ?? self::DEFAULT_PREFIX,
             'service' => $replicationConfiguration['service'] ?? '',
             'parameters' => [
                 'password' => $replicationConfiguration['password'] ?? '',
