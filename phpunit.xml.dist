@@ -3,11 +3,21 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/7.0/phpunit.xsd"
     colors="true">
+
     <testsuites>
-        <testsuite name="Test Suite">
-            <directory>./tests</directory>
+        <testsuite name="feature">
+            <directory>tests/Feature</directory>
         </testsuite>
     </testsuites>
+
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory suffix=".php">./src</directory>
+        </include>
+        <report>
+            <clover outputFile="build/logs/clover.xml"/>
+        </report>
+    </coverage>
 
     <filter>
         <whitelist>
@@ -18,4 +28,11 @@
             </exclude>
         </whitelist>
     </filter>
+
+    <php>
+        <!-- Redis -->
+        <const name="REDIS_SERVER_HOST" value="127.0.0.1" />
+        <const name="REDIS_SERVER_PORT" value="6379" />
+        <const name="REDIS_SERVER_DBNUM" value="0" />
+    </php>
 </phpunit>
