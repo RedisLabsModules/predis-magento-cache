@@ -55,19 +55,12 @@ jobs:
                 if: ${{ matrix.php == '8.1' && matrix.redis == '7' }}
                 run: vendor/bin/phpunit --verbose --coverage-clover build/logs/clover.xml --coverage-filter ./src --log-junit report.xml
 
-            -   uses: actions/upload-artifact@v2
-                if: success() || failure()
-                with:
-                    name: test-report
-                    path: report.xml
-
             -   name: Test Report
                 uses: dorny/test-reporter@v1
                 continue-on-error: true
                 if: success() || failure()
                 with:
-                    artifact: test-report
-                    path: "*.xml"
+                    path: "report.xml"
                     name: PHPUnit Tests
                     reporter: java-junit
                     list-suites: all

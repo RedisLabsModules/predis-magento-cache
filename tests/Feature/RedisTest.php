@@ -356,7 +356,7 @@ final class RedisTest extends FeatureTestCase
         $this->assertTrue($backend->save('hello,world', 'id:1', ['tag1', 'tag2'], 1));
         $this->assertTrue($backend->save('hello,world', 'id:2', ['tag1', 'tag2']));
 
-        sleep(1);
+        sleep(2);
 
         $backend->clean(\Zend_Cache::CLEANING_MODE_OLD);
 
@@ -380,7 +380,7 @@ final class RedisTest extends FeatureTestCase
         $this->assertTrue($backend->save('hello,world', 'id:1', ['tag1', 'tag2'], 1));
         $this->assertTrue($backend->save('hello,world', 'id:2', ['tag1', 'tag2']));
 
-        sleep(1);
+        sleep(2);
 
         $backend->clean(\Zend_Cache::CLEANING_MODE_OLD);
 
@@ -404,7 +404,7 @@ final class RedisTest extends FeatureTestCase
         $backend = new Redis($this->getDefaultBackendOptions());
         $this->assertTrue($backend->save('hello,world', 'id:1', ['tag1', 'tag2'], 1));
 
-        sleep(1);
+        sleep(2);
 
         $backend->clean(\Zend_Cache::CLEANING_MODE_OLD);
 
