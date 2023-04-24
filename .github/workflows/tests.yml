@@ -48,11 +48,9 @@ jobs:
                     dependency-versions: highest
 
             -   name: Run feature tests
-                if: ${{ matrix.php != '8.1' || matrix.redis != '7' }}
                 run: vendor/bin/phpunit --testsuite feature --verbose
 
             -   name: Run unit tests
-                if: ${{ matrix.php != '8.1' || matrix.redis != '7' }}
                 run: vendor/bin/phpunit --testsuite unit --verbose --log-junit report.xml
 
             -   name: Test Report
