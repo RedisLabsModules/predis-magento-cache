@@ -55,6 +55,13 @@ jobs:
                 if: ${{ matrix.php == '8.1' && matrix.redis == '7' }}
                 run: vendor/bin/phpunit --verbose --coverage-clover build/logs/clover.xml --coverage-filter ./src --log-junit report.xml
 
+            -   name: Upload codecov coverage
+                uses: codecov/codecov-action@v3
+                with:
+                    fail_ci_if_error: false
+                    files: build/logs/clover.xml
+                    verbose: true
+
             -   name: Test Report
                 uses: dorny/test-reporter@v1
                 continue-on-error: true
