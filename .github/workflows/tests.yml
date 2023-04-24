@@ -53,10 +53,6 @@ jobs:
             -   name: Run unit tests
                 run: vendor/bin/phpunit --testsuite unit --verbose --log-junit report.xml
 
-            -   name: Run unit tests with coverage
-                if: ${{ matrix.php == '8.1' && matrix.redis == '7' }}
-                run: vendor/bin/phpunit --testsuite unit --verbose --coverage-clover build/logs/clover.xml --coverage-filter ./src --log-junit report.xml
-
             -   name: Test Report
                 uses: dorny/test-reporter@v1
                 continue-on-error: true
