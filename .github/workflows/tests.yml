@@ -53,6 +53,13 @@ jobs:
             -   name: Run unit tests
                 run: vendor/bin/phpunit --testsuite unit --verbose --log-junit report.xml
 
+            -   name: Upload codecov coverage
+                uses: codecov/codecov-action@v3
+                with:
+                    fail_ci_if_error: false
+                    files: build/logs/clover.xml
+                    verbose: true
+
             -   name: Test Report
                 uses: dorny/test-reporter@v1
                 if: success() || failure()
