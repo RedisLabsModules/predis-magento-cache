@@ -51,7 +51,12 @@ jobs:
                 run: vendor/bin/phpunit --testsuite feature --verbose
 
             -   name: Run unit tests
+                if: ${{ matrix.php != '8.1' || matrix.redis != '7' }}
                 run: vendor/bin/phpunit --testsuite unit --verbose --log-junit report.xml
+
+            -   name: Run unit tests with coverage
+                if: ${{ matrix.php == '8.1' && matrix.redis == '7' }}
+                run: vendor/bin/phpunit --verbose --coverage-clover build/logs/clover.xml --coverage-filter ./src --log-junit report.xml
 
             -   name: Upload codecov coverage
                 uses: codecov/codecov-action@v3
