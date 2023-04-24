@@ -3,14 +3,11 @@
 namespace Redis\Pmc\Cache\Backend;
 
 use Predis\Client;
-use Zend_Cache;
-use Zend_Cache_Exception;
 
 class ClientFactory
 {
     /**
      * Mapping for parameters to match expected configuration.
-     *
      */
     protected array $parametersMapping = [
         'server' => 'host',
@@ -19,9 +16,7 @@ class ClientFactory
     /**
      * Creates client with given configuration.
      *
-     * @param array $options
-     * @return Client
-     * @throws Zend_Cache_Exception
+     * @throws \Zend_Cache_Exception
      */
     public function create(array $options): Client
     {
@@ -30,7 +25,7 @@ class ClientFactory
         }
 
         if (!array_key_exists('server', $options) && !array_key_exists('cluster', $options)) {
-            Zend_Cache::throwException('Redis server does not specified');
+            \Zend_Cache::throwException('Redis server does not specified');
         }
 
         if (isset($options['server'])) {
@@ -44,7 +39,7 @@ class ClientFactory
                 return $this->setupClusterClient($options['cluster']);
             }
 
-            Zend_Cache::throwException(
+            \Zend_Cache::throwException(
                 'Cluster configuration should be specified as array'
             );
         }
@@ -54,19 +49,16 @@ class ClientFactory
                 return $this->setupReplicationClient($options['replication']);
             }
 
-            Zend_Cache::throwException(
+            \Zend_Cache::throwException(
                 'Replication configuration should be specified as array'
             );
         }
 
-        Zend_Cache::throwException('Unknown connection type.');
+        \Zend_Cache::throwException('Unknown connection type.');
     }
 
     /**
      * Maps user defined backend options to options and parameters expected for client.
-     *
-     * @param array $options
-     * @return array
      */
     protected function mapOptions(array $options): array
     {
@@ -85,9 +77,6 @@ class ClientFactory
 
     /**
      * Setup cluster client according to given configuration.
-     *
-     * @param array $clusterConfiguration
-     * @return Client
      */
     protected function setupClusterClient(array $clusterConfiguration): Client
     {
@@ -96,14 +85,14 @@ class ClientFactory
             'cluster' => $clusterConfiguration['driver'] ?? 'redis',
             'parameters' => [
                 'password' => $clusterConfiguration['password'] ?? '',
-            ]
+            ],
         ];
 
         foreach ($clusterConfiguration['connections'] as $connection) {
             $connection = $this->mapOptions($connection);
             $scheme = $connection['scheme'] ?? 'tcp';
             $port = $connection['port'] ?? 6379;
-            $uri = $scheme . "://" . $connection['host'] . ":" . $port;
+            $uri = $scheme.'://'.$connection['host'].':'.$port;
             $parameters[] = $uri;
         }
 
@@ -112,9 +101,6 @@ class ClientFactory
 
     /**
      * Setup replication client according to given configuration.
-     *
-     * @param array $replicationConfiguration
-     * @return Client
      */
     protected function setupReplicationClient(array $replicationConfiguration): Client
     {
@@ -131,7 +117,7 @@ class ClientFactory
             $connection = $this->mapOptions($connection);
             $scheme = $connection['scheme'] ?? 'tcp';
             $port = $connection['port'] ?? 6379;
-            $uri = $scheme . "://" . $connection['host'] . ":" . $port;
+            $uri = $scheme.'://'.$connection['host'].':'.$port;
 
             if (isset($connection['role'])) {
                 $uri .= "?role={$connection['role']}";
