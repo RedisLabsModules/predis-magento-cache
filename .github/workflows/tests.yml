@@ -72,8 +72,8 @@ jobs:
 
             -   name: Send coverage to Coveralls
                 env:
-                    COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                if: ${{ env.COVERALLS_REPO_TOKEN && matrix.php == '8.1' && matrix.redis == '7' }}
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                if: ${{ env.GITHUB_TOKEN && matrix.php == '8.1' && matrix.redis == '7' }}
                 run: |
                     wget "https://github.com/php-coveralls/php-coveralls/releases/download/v2.5.3/php-coveralls.phar"
-                    php ./php-coveralls.phar -v
+                    php ./php-coveralls.phar -v --service=github
