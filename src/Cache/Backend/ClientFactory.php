@@ -3,8 +3,9 @@
 namespace Redis\Pmc\Cache\Backend;
 
 use Predis\Client;
+use Predis\ClientInterface;
 
-class ClientFactory
+class ClientFactory implements FactoryInterface
 {
     /**
      * Mapping for parameters to match expected configuration.
@@ -18,7 +19,7 @@ class ClientFactory
      *
      * @throws \Zend_Cache_Exception
      */
-    public function create(array $options): Client
+    public function create(array $options): ClientInterface
     {
         if (isset($options['uri'])) {
             return new Client($options['uri']);

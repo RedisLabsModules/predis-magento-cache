@@ -3,8 +3,8 @@
 namespace Redis\Pmc\Cache\Backend;
 
 use Predis\Client;
+use Predis\ClientInterface;
 use Predis\Pipeline\Pipeline;
-use Predis\Response\ServerException;
 
 class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedInterface
 {
@@ -23,7 +23,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
     public const MAX_LIFETIME = 2592000; /* Redis backend limit */
     public const COMPRESS_PREFIX = ":\x1f\x8b";
 
-    protected Client $_client;
+    protected ClientInterface $_client;
     protected bool $_notMatchingTags = false;
     protected int $_lifetimeLimit = self::MAX_LIFETIME; /* Redis backend limit */
     protected int|bool $_compressTags = 1;
@@ -154,10 +154,10 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
     /**
      * @throws \Zend_Cache_Exception
      */
-    public function __construct(array $options = [])
+    public function __construct(array $options = [], ?FactoryInterface $factory = null)
     {
-        $clientFactory = new ClientFactory();
-        $this->_client = $clientFactory->create($options);
+        $factory = $factory ?? new ClientFactory();
+        $this->_client = $factory->create($options);
 
         if (isset($options['automatic_cleaning_factor'])) {
             $this->_automaticCleaningFactor = (int) $options['automatic_cleaning_factor'];

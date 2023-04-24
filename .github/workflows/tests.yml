@@ -47,13 +47,13 @@ jobs:
                 with:
                     dependency-versions: highest
 
-            -   name: Run PHPUnit Feature tests
+            -   name: Run feature tests
                 if: ${{ matrix.php != '8.1' || matrix.redis != '7' }}
-                run: vendor/bin/phpunit --verbose --log-junit report.xml
+                run: vendor/bin/phpunit --testsuite feature --verbose
 
-            -   name: Run PHPUnit tests with coverage
-                if: ${{ matrix.php == '8.1' && matrix.redis == '7' }}
-                run: vendor/bin/phpunit --verbose --coverage-clover build/logs/clover.xml --coverage-filter ./src --log-junit report.xml
+            -   name: Run unit tests
+                if: ${{ matrix.php != '8.1' || matrix.redis != '7' }}
+                run: vendor/bin/phpunit --testsuite unit --verbose --log-junit report.xml
 
             -   name: Test Report
                 uses: dorny/test-reporter@v1
@@ -67,3 +67,11 @@ jobs:
                     list-tests: all
                     max-annotations: 10
                     fail-on-error: 'false'
+
+            -   name: Send coverage to Coveralls
+                env:
+                    COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                if: ${{ env.COVERALLS_REPO_TOKEN && matrix.php == '8.1' && matrix.redis == '7' }}
+                run: |
+                    wget "https://github.com/php-coveralls/php-coveralls/releases/download/v2.5.3/php-coveralls.phar"
+                    php ./php-coveralls.phar -v
