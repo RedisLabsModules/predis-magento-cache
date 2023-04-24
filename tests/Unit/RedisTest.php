@@ -523,7 +523,7 @@ final class RedisTest extends TestCase
     }
 
     /**
-     * @dataProvider testProvider
+     * @dataProvider functionTestProvider
      *
      * @throws \Zend_Cache_Exception
      */
@@ -551,7 +551,7 @@ final class RedisTest extends TestCase
         $this->assertSame($expectedResponse, $backend->getLifetime($lifetime));
     }
 
-    public function testProvider(): array
+    public function functionTestProvider(): array
     {
         return [
             'with integer time' => [10000, 10000],
