@@ -67,6 +67,7 @@ jobs:
                 if: success() || failure()
                 with:
                     artifact: test-report
+                    path: "*.xml"
                     name: PHPUnit Tests
                     reporter: java-junit
                     list-suites: all

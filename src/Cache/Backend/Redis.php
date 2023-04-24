@@ -4,6 +4,7 @@ namespace Redis\Pmc\Cache\Backend;
 
 use Predis\Client;
 use Predis\Pipeline\Pipeline;
+use Predis\Response\ServerException;
 
 class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedInterface
 {
@@ -46,7 +47,6 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
      */
     protected array $_luaScripts = [
         'save' => [
-            'sha1' => '1617c9fb2bda7d790bb1aaa320c1099d81825e64',
             'code' => "local oldTags = redis.call('HGET', ARGV[1]..ARGV[9], ARGV[3]) ".
                 "redis.call('HMSET', ARGV[1]..ARGV[9], ARGV[2], ARGV[10], ARGV[3], ARGV[11], ARGV[4], ARGV[12], ARGV[5], ARGV[13]) ".
                 "if (ARGV[13] == '0') then ".
@@ -68,7 +68,6 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
                 'end',
             ],
         'removeByMatchingAnyTags' => [
-            'sha1' => 'a6d92d0d20e5c8fa3d1a4cf7417191b66676ce43',
             'code' => 'for i = 1, #KEYS, ARGV[6] do '.
                 'local prefixedTags = {} '.
                 'for x, tag in ipairs(KEYS) do '.
@@ -87,7 +86,6 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
                 'return true',
             ],
         'collectGarbage' => [
-            'sha1' => 'c00416b970f1aa6363b44965d4cf60ee99a6f065',
             'code' => 'local tagKeys = {} '.
                 'local expired = {} '.
                 'local expiredCount = 0 '.
@@ -901,14 +899,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
             return $this->_client->fcall($scriptName, $keys, ...$arguments);
         }
 
-        $result =
-            $this->_client->evalsha($this->_luaScripts[$scriptName]['sha1'], count($keys), ...$keys, ...$arguments);
-
-        if (is_null($result)) {
-            return $this->_client->eval($this->_luaScripts[$scriptName]['code'], count($keys), ...$keys, ...$arguments);
-        }
-
-        return $result;
+        return $this->_client->eval($this->_luaScripts[$scriptName]['code'], count($keys), ...$keys, ...$arguments);
     }
 
     private function _getRedisServerVersion(): string
