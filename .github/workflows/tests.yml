@@ -60,7 +60,7 @@ jobs:
                 with:
                     path: "report.xml"
                     name: Test Report PHP ${{ matrix.php }} Redis ${{ matrix.redis }}
-                    reporter: jest-junit
+                    reporter: java-junit
                     list-suites: all
                     list-tests: all
                     max-annotations: 10
