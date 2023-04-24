@@ -61,7 +61,7 @@ jobs:
                 if: success() || failure()
                 with:
                     path: "report.xml"
-                    name: PHPUnit Tests
+                    name: Test Report PHP ${{ matrix.php }} Redis ${{ matrix.redis }}
                     reporter: java-junit
                     list-suites: all
                     list-tests: all
