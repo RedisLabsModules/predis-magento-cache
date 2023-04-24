@@ -521,4 +521,50 @@ final class RedisTest extends TestCase
 
         $this->assertSame('word1,word2,word3', $backend->load('REQEST_id'));
     }
+
+    /**
+     * @dataProvider testProvider
+     *
+     * @throws \Zend_Cache_Exception
+     */
+    public function testTestReturnsMTimeOfGivenId(bool|int $time, bool|int $expectedResponse): void
+    {
+        $this->mockClient
+            ->shouldReceive('hget')
+            ->once()
+            ->withArgs([Redis::PREFIX_KEY.'id', Redis::FIELD_MTIME])
+            ->andReturn($time);
+
+        $backend = new Redis([], $this->mockFactory);
+
+        $this->assertSame($expectedResponse, $backend->test('id'));
+    }
+
+    /**
+     * @dataProvider getLifetimeProvider
+     * @throws \Zend_Cache_Exception
+     */
+    public function testGetLifetimeReturnsFalseOnFalseSpecificLifetime($lifetime, int $expectedResponse): void
+    {
+        $backend = new Redis([], $this->mockFactory);
+
+        $this->assertSame($expectedResponse, $backend->getLifetime($lifetime));
+    }
+
+    public function testProvider(): array
+    {
+        return [
+            'with integer time' => [10000, 10000],
+            'with false time' => [false, false],
+        ];
+    }
+
+    public function getLifetimeProvider(): array
+    {
+        return [
+            'with string false' => ['false', 3600],
+            'with boolean false' => [false, 3600],
+            'with integer' => [10000, 10000],
+        ];
+    }
 }

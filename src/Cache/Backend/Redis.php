@@ -501,7 +501,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
                 $id,
                 $this->_encodeData($data, $this->_compressData),
                 $this->_encodeData(implode(',', $tags), $this->_compressTags),
-                time(),
+                $this->_dateTime->getTimestamp(),
                 $lifetime ? 0 : 1,
                 min($lifetime, self::MAX_LIFETIME),
                 $this->_notMatchingTags ? 1 : 0,
@@ -533,7 +533,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
                 self::FIELD_TAGS,
                 $this->_encodeData(implode(',', $tags), $this->_compressTags),
                 self::FIELD_MTIME,
-                time(),
+                $this->_dateTime->getTimestamp(),
                 self::FIELD_INF,
                 is_null($lifetime) ? 1 : 0
             );
