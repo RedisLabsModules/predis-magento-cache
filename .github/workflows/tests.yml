@@ -55,7 +55,6 @@ jobs:
 
             -   name: Test Report
                 uses: dorny/test-reporter@v1
-                continue-on-error: true
                 if: success() || failure()
                 with:
                     path: "report.xml"
