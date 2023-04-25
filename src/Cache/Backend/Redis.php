@@ -514,7 +514,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
                     $this->_client->pipeline(function (Pipeline $pipeline) use ($remTags, $id) {
                         // Update the id list for each tag
                         foreach ($remTags as $tag) {
-                            $pipeline->sRem(self::PREFIX_TAG_IDS.$tag, $id);
+                            $pipeline->srem(self::PREFIX_TAG_IDS.$tag, $id);
                         }
                     });
                 }
@@ -561,7 +561,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
 
             // Update the list with all the ids
             if ($this->_notMatchingTags) {
-                $pipeline->sAdd(self::SET_IDS, $id);
+                $pipeline->sadd(self::SET_IDS, $id);
             }
 
             $pipeline->exec();
