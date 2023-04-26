@@ -698,7 +698,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
             $pipeline->multi();
 
             $pipeline->del($this->_processTagIds($tags));
-            $pipeline->sRem(self::SET_TAGS, ...$tags);
+            $pipeline->srem(self::SET_TAGS, ...$tags);
 
             $pipeline->exec();
         });
