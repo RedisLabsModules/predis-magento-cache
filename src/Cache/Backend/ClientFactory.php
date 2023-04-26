@@ -25,24 +25,10 @@ class ClientFactory implements FactoryInterface
             return new Client($options['uri']);
         }
 
-        if (!array_key_exists('server', $options) && !array_key_exists('cluster', $options)) {
-            \Zend_Cache::throwException('Redis server does not specified');
-        }
-
         if (isset($options['server'])) {
             $options = $this->mapOptions($options);
 
             return new Client($options);
-        }
-
-        if (isset($options['cluster'])) {
-            if (is_array($options['cluster'])) {
-                return $this->setupClusterClient($options['cluster']);
-            }
-
-            \Zend_Cache::throwException(
-                'Cluster configuration should be specified as array'
-            );
         }
 
         if (isset($options['replication'])) {
@@ -74,30 +60,6 @@ class ClientFactory implements FactoryInterface
         }
 
         return $mappedOptions;
-    }
-
-    /**
-     * Setup cluster client according to given configuration.
-     */
-    protected function setupClusterClient(array $clusterConfiguration): Client
-    {
-        $parameters = [];
-        $options = [
-            'cluster' => $clusterConfiguration['driver'] ?? 'redis',
-            'parameters' => [
-                'password' => $clusterConfiguration['password'] ?? '',
-            ],
-        ];
-
-        foreach ($clusterConfiguration['connections'] as $connection) {
-            $connection = $this->mapOptions($connection);
-            $scheme = $connection['scheme'] ?? 'tcp';
-            $port = $connection['port'] ?? 6379;
-            $uri = $scheme.'://'.$connection['host'].':'.$port;
-            $parameters[] = $uri;
-        }
-
-        return new Client($parameters, $options);
     }
 
     /**
