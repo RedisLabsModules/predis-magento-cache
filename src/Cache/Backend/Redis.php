@@ -2,9 +2,8 @@
 
 namespace Redis\Pmc\Cache\Backend;
 
-use Predis\Client;
+use Predis\ClientInterface;
 use Predis\Pipeline\Pipeline;
-use Predis\Response\ServerException;
 
 class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedInterface
 {
@@ -23,7 +22,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
     public const MAX_LIFETIME = 2592000; /* Redis backend limit */
     public const COMPRESS_PREFIX = ":\x1f\x8b";
 
-    protected Client $_client;
+    protected ClientInterface $_client;
     protected bool $_notMatchingTags = false;
     protected int $_lifetimeLimit = self::MAX_LIFETIME; /* Redis backend limit */
     protected int|bool $_compressTags = 1;
@@ -31,6 +30,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
     protected int $_compressThreshold = 20480;
     protected string $_compressionLib;
     protected int $_automaticCleaningFactor = 0;
+    protected \DateTime $_dateTime;
 
     /**
      * Defines possible available by default PHP compression libraries.
@@ -154,10 +154,14 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
     /**
      * @throws \Zend_Cache_Exception
      */
-    public function __construct(array $options = [])
-    {
-        $clientFactory = new ClientFactory();
-        $this->_client = $clientFactory->create($options);
+    public function __construct(
+        array $options = [],
+        ?FactoryInterface $factory = null,
+        ?\DateTimeInterface $dateTime = null
+    ) {
+        $factory = $factory ?? new ClientFactory();
+        $this->_dateTime = $dateTime ?? new \DateTime();
+        $this->_client = $factory->create($options);
 
         if (isset($options['automatic_cleaning_factor'])) {
             $this->_automaticCleaningFactor = (int) $options['automatic_cleaning_factor'];
@@ -296,7 +300,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
         }
 
         $tags = explode(',', $this->_decodeData($tags));
-        $expire = '1' === $inf ? false : time() + $this->_client->ttl(self::PREFIX_KEY.$id);
+        $expire = '1' === $inf ? false : $this->_dateTime->getTimestamp() + $this->_client->ttl(self::PREFIX_KEY.$id);
 
         return [
             'expire' => $expire,
@@ -344,7 +348,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
     {
         $data = $this->_client->hget(self::PREFIX_KEY.$id, self::FIELD_DATA);
 
-        if (null === $data) {
+        if (empty($data)) {
             return false;
         }
 
@@ -497,7 +501,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
                 $id,
                 $this->_encodeData($data, $this->_compressData),
                 $this->_encodeData(implode(',', $tags), $this->_compressTags),
-                time(),
+                $this->_dateTime->getTimestamp(),
                 $lifetime ? 0 : 1,
                 min($lifetime, self::MAX_LIFETIME),
                 $this->_notMatchingTags ? 1 : 0,
@@ -510,7 +514,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
                     $this->_client->pipeline(function (Pipeline $pipeline) use ($remTags, $id) {
                         // Update the id list for each tag
                         foreach ($remTags as $tag) {
-                            $pipeline->sRem(self::PREFIX_TAG_IDS.$tag, $id);
+                            $pipeline->srem(self::PREFIX_TAG_IDS.$tag, $id);
                         }
                     });
                 }
@@ -529,7 +533,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
                 self::FIELD_TAGS,
                 $this->_encodeData(implode(',', $tags), $this->_compressTags),
                 self::FIELD_MTIME,
-                time(),
+                $this->_dateTime->getTimestamp(),
                 self::FIELD_INF,
                 is_null($lifetime) ? 1 : 0
             );
@@ -557,7 +561,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
 
             // Update the list with all the ids
             if ($this->_notMatchingTags) {
-                $pipeline->sAdd(self::SET_IDS, $id);
+                $pipeline->sadd(self::SET_IDS, $id);
             }
 
             $pipeline->exec();
@@ -694,7 +698,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
             $pipeline->multi();
 
             $pipeline->del($this->_processTagIds($tags));
-            $pipeline->sRem(self::SET_TAGS, ...$tags);
+            $pipeline->srem(self::SET_TAGS, ...$tags);
 
             $pipeline->exec();
         });
