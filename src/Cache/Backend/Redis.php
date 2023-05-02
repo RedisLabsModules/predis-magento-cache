@@ -24,7 +24,6 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
 
     protected ClientInterface $_client;
     protected bool $_notMatchingTags = false;
-    protected int $_lifetimeLimit = self::MAX_LIFETIME; /* Redis backend limit */
     protected int|bool $_compressTags = 1;
     protected int|bool $_compressData = 1;
     protected int $_compressThreshold = 20480;
@@ -169,10 +168,6 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
 
         if (isset($options['notMatchingTags'])) {
             $this->_notMatchingTags = (bool) $options['notMatchingTags'];
-        }
-
-        if (isset($options['lifetimelimit'])) {
-            $this->_lifetimeLimit = (int) min($options['lifetimelimit'], self::MAX_LIFETIME);
         }
 
         if (isset($options['use_lua'])) {
@@ -915,8 +910,6 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
 
     /**
      * Loads given LUA script as redis function.
-     *
-     * @throws \Zend_Cache_Exception
      */
     private function _loadRedisFunction(string $scriptName): void
     {

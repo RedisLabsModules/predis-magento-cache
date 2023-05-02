@@ -73,6 +73,7 @@ class ClientFactory implements FactoryInterface
             'service' => $replicationConfiguration['service'] ?? '',
             'parameters' => [
                 'password' => $replicationConfiguration['password'] ?? '',
+                'database' => $replicationConfiguration['database'] ?? 0,
             ],
         ];
 
