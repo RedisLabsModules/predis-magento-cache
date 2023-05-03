@@ -150,6 +150,7 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
      * @see https://github.com/antirez/redis/blob/b903145/deps/lua/src/luaconf.h#L439
      */
     protected int $_luaMaxCStack = 5000;
+    protected string $_compressPrefix;
 
     /**
      * @throws \Zend_Cache_Exception
