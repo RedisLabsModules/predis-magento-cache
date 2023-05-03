@@ -1,7 +1,7 @@
 # Description
 
-Officially supported by Redis Ltd. and feature complete Redis backend that implements `Zend Cache Backend` interface and 
-allows to use Redis server as cache storage. Based on [Predis](https://github.com/predis/predis) PHP client for Redis 
+Officially supported by Redis Inc, a feature complete Redis backend that implements `Zend Cache Backend` interface and
+allowing to use Redis server as cache storage. Based on [Predis](https://github.com/predis/predis) PHP client for Redis 
 database. Tags are fully supported except of `TwoLevels` cache and is a great use for single server instance or Redis 
 Enterprise cluster. Suits for any Zend Framework projects including all versions of Magento.
 
@@ -14,8 +14,8 @@ $ composer require redis-labs-modules/predis-magento-cache
 ## Features
 - Fully supported tags with implementation based on Redis data structures "set" and "hash" for easy management and the best performance.
 - Automatic key expiration performed by Redis.
-- Variety of different connection types including sockets (tcp, unix, tls, rediss). For more information check [Connecting to Redis](https://github.com/predis/predis#connecting-to-redis).
-- Supports data compression for memory savings. Requires one of this extensions to be available: gzip, lzf, snappy, zlib.
+- Supports redis standard socket implementations. For more information see [Connecting to Redis](https://github.com/predis/predis#connecting-to-redis).
+- Supports data compression as long as one of the PHP extensions: gzip, lzf, snappy, or zlib are available.
 - Uses transactions for data consistency in places where it's needed.
 - Uses pipelines for best performance.
 - Support replication mechanism (one master and single/multiple slaves).
