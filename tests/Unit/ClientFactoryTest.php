@@ -39,6 +39,16 @@ class ClientFactoryTest extends TestCase
                     ],
                 ]],
             ],
+            'with cluster' => [
+                ['cluster' => [
+                    'connections' => [
+                        [
+                            'server' => 'test',
+                            'port' => 6379,
+                        ],
+                    ],
+                ]],
+            ],
         ];
     }
 }

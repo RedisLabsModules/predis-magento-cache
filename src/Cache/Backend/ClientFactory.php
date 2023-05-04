@@ -41,6 +41,16 @@ class ClientFactory implements FactoryInterface
             );
         }
 
+        if (isset($options['cluster'])) {
+            if (is_array($options['cluster'])) {
+                return $this->setupClusterClient($options['cluster']);
+            }
+
+            \Zend_Cache::throwException(
+                'Cluster configuration should be specified as array'
+            );
+        }
+
         \Zend_Cache::throwException('Unknown connection type.');
     }
 
@@ -65,7 +75,7 @@ class ClientFactory implements FactoryInterface
     /**
      * Setup replication client according to given configuration.
      */
-    protected function setupReplicationClient(array $replicationConfiguration): Client
+    protected function setupReplicationClient(array $replicationConfiguration): ClientInterface
     {
         $parameters = [];
         $options = [
@@ -85,6 +95,36 @@ class ClientFactory implements FactoryInterface
 
             if (isset($connection['role'])) {
                 $uri .= "?role={$connection['role']}";
+            }
+
+            $parameters[] = $uri;
+        }
+
+        return new Client($parameters, $options);
+    }
+
+    /**
+     * Setup cluster client according to given configuration.
+     */
+    protected function setupClusterClient(array $clusterConfiguration): ClientInterface
+    {
+        $parameters = [];
+        $options = [
+            'cluster' => $clusterConfiguration['driver'] ?? 'redis',
+            'parameters' => [
+                'password' => $clusterConfiguration['password'] ?? '',
+                'database' => $clusterConfiguration['database'] ?? 0,
+            ],
+        ];
+
+        foreach ($clusterConfiguration['connections'] as $connection) {
+            $connection = $this->mapOptions($connection);
+            $scheme = $connection['scheme'] ?? 'tcp';
+            $port = $connection['port'] ?? 6379;
+            $uri = $scheme.'://'.$connection['host'].':'.$port;
+
+            if (isset($connection['alias'])) {
+                $uri .= "?alias={$connection['alias']}";
             }
 
             $parameters[] = $uri;
