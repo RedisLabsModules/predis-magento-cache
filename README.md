@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/redislabsmodules/predis-magento-cache/branch/main/graph/badge.svg)]([https://codecov.io/gh/redis/redis-py](https://app.codecov.io/gh/RedisLabsModules/predis-magento-cache))
+
 # Description
 
 Officially supported by Redis Inc, a feature complete Redis backend that implements `Zend Cache Backend` interface and
