@@ -883,14 +883,9 @@ class Redis extends \Zend_Cache_Backend implements \Zend_Cache_Backend_ExtendedI
     /**
      * Executes given LUA script with provided arguments.
      *
-     * @throws \Zend_Cache_Exception
      */
     protected function _executeLuaScript(string $scriptName, array $keys = [], array $arguments = []): mixed
     {
-        if (!array_key_exists($scriptName, $this->_luaScripts)) {
-            \Zend_Cache::throwException('Non existing script with following name.');
-        }
-
         $redisVersion = $this->_getRedisServerVersion();
 
         if (version_compare($redisVersion, '7.0.0') >= 0) {

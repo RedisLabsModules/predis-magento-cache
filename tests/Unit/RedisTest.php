@@ -209,6 +209,16 @@ final class RedisTest extends TestCase
     /**
      * @throws \Zend_Cache_Exception
      */
+    public function testGetIdsMatchingAnyTagsReturnsEmptyArrayOnMissingTags(): void
+    {
+        $backend = new Redis([], $this->mockFactory);
+
+        $this->assertSame([], $backend->getIdsMatchingAnyTags([]));
+    }
+
+    /**
+     * @throws \Zend_Cache_Exception
+     */
     public function testGetFillingPercentageReturnsOneOnNonUsedMemory(): void
     {
         $config = [
@@ -524,6 +534,29 @@ final class RedisTest extends TestCase
     }
 
     /**
+     * @throws \Zend_Cache_Exception
+     */
+    public function testLoadReturnsDecodedDataAndSetsExpirationOnNonMatchingAutoExpiringPattern(): void
+    {
+        $compressionPrefix = substr('gzip', 0, 2).Redis::COMPRESS_PREFIX;
+        $compressedData = $compressionPrefix.gzcompress('word1,word2,word3', 1);
+
+        $this->mockClient
+            ->shouldReceive('hget')
+            ->once()
+            ->withArgs([Redis::PREFIX_KEY.'id', Redis::FIELD_DATA])
+            ->andReturn($compressedData);
+
+        $this->mockClient
+            ->shouldNotReceive('expire')
+            ->withAnyArgs();
+
+        $backend = new Redis(['auto_expire_lifetime' => 10000, 'auto_expire_refresh_on_load' => true], $this->mockFactory);
+
+        $this->assertSame('word1,word2,word3', $backend->load('id'));
+    }
+
+    /**
      * @dataProvider functionTestProvider
      *
      * @throws \Zend_Cache_Exception
@@ -646,6 +679,289 @@ final class RedisTest extends TestCase
         );
 
         $this->assertTrue($backend->save($data, 'id', $tags));
+    }
+
+    /**
+     * @throws \Zend_Cache_Exception
+     * @throws \Exception
+     */
+    public function testSaveCorrectlySavesGivenDataWithNonMatchingAutoExpirePattern(): void
+    {
+        $data = 'data';
+        $compressionPrefix = substr('gzip', 0, 2).Redis::COMPRESS_PREFIX;
+        $tags = ['tag1', 'tag2'];
+        $oldTags = 'tag3,tag4';
+
+        $this->mockClient
+            ->shouldReceive('hget')
+            ->once()
+            ->withArgs([Redis::PREFIX_KEY.'id', Redis::FIELD_TAGS])
+            ->andReturn($oldTags);
+
+        $mockDateTime = \Mockery::mock(\DateTime::class);
+        $mockDateTime
+            ->shouldReceive('getTimestamp')
+            ->once()
+            ->withNoArgs()
+            ->andReturn(11111);
+
+        $mockPipeline = \Mockery::mock(Pipeline::class);
+        $mockPipeline
+            ->shouldReceive('multi')
+            ->once()
+            ->withNoArgs();
+
+        $mockPipeline
+            ->shouldReceive('hset')
+            ->once()
+            ->withArgs(
+                [
+                    Redis::PREFIX_KEY.'id',
+                    Redis::FIELD_DATA,
+                    $compressionPrefix.gzcompress($data, 1),
+                    Redis::FIELD_TAGS,
+                    $compressionPrefix.gzcompress(implode(',', $tags), 1),
+                    Redis::FIELD_MTIME,
+                    11111,
+                    Redis::FIELD_INF,
+                    1,
+                ]
+            );
+
+        $mockPipeline
+            ->shouldNotReceive('expire')
+            ->withAnyArgs();
+
+        $mockPipeline
+            ->shouldReceive('sadd')
+            ->once()
+            ->withArgs([Redis::SET_TAGS, $tags]);
+
+        foreach ($tags as $tag) {
+            $mockPipeline
+                ->shouldReceive('sadd')
+                ->once()
+                ->withArgs([Redis::PREFIX_TAG_IDS.$tag, 'id']);
+        }
+
+        foreach (explode(',', $oldTags) as $oldTag) {
+            $mockPipeline
+                ->shouldReceive('srem')
+                ->once()
+                ->withArgs([Redis::PREFIX_TAG_IDS.$oldTag, 'id']);
+        }
+
+        $mockPipeline
+            ->shouldReceive('exec')
+            ->once()
+            ->withNoArgs();
+
+        // Mocks pipeline object within a callback
+        $this->mockClient
+            ->shouldReceive('pipeline')
+            ->once()
+            ->with(\Mockery::on(static function ($argument) use ($mockPipeline) {
+                $argument($mockPipeline);
+
+                return true;
+            }));
+
+        $backend = new Redis(
+            ['compression_lib' => 'gzip', 'compress_threshold' => '1', 'auto_expire_lifetime' => 1000],
+            $this->mockFactory,
+            $mockDateTime
+        );
+
+        $this->assertTrue($backend->save($data, 'id', $tags, null));
+    }
+
+    /**
+     * @throws \Zend_Cache_Exception
+     * @throws \Exception
+     */
+    public function testSaveCorrectlySavesGivenDataWithIdMatchingAutoExpirePattern(): void
+    {
+        $data = 'data';
+        $compressionPrefix = substr('gzip', 0, 2).Redis::COMPRESS_PREFIX;
+        $tags = ['tag1', 'tag2'];
+        $oldTags = 'tag3,tag4';
+
+        $this->mockClient
+            ->shouldReceive('hget')
+            ->once()
+            ->withArgs([Redis::PREFIX_KEY.'REQEST_id', Redis::FIELD_TAGS])
+            ->andReturn($oldTags);
+
+        $mockDateTime = \Mockery::mock(\DateTime::class);
+        $mockDateTime
+            ->shouldReceive('getTimestamp')
+            ->once()
+            ->withNoArgs()
+            ->andReturn(11111);
+
+        $mockPipeline = \Mockery::mock(Pipeline::class);
+        $mockPipeline
+            ->shouldReceive('multi')
+            ->once()
+            ->withNoArgs();
+
+        $mockPipeline
+            ->shouldReceive('hset')
+            ->once()
+            ->withArgs(
+                [
+                    Redis::PREFIX_KEY.'REQEST_id',
+                    Redis::FIELD_DATA,
+                    $compressionPrefix.gzcompress($data, 1),
+                    Redis::FIELD_TAGS,
+                    $compressionPrefix.gzcompress(implode(',', $tags), 1),
+                    Redis::FIELD_MTIME,
+                    11111,
+                    Redis::FIELD_INF,
+                    0,
+                ]
+            );
+
+        $mockPipeline
+            ->shouldReceive('expire')
+            ->once()
+            ->withArgs([Redis::PREFIX_KEY.'REQEST_id', 1000]);
+
+        $mockPipeline
+            ->shouldReceive('sadd')
+            ->once()
+            ->withArgs([Redis::SET_TAGS, $tags]);
+
+        foreach ($tags as $tag) {
+            $mockPipeline
+                ->shouldReceive('sadd')
+                ->once()
+                ->withArgs([Redis::PREFIX_TAG_IDS.$tag, 'REQEST_id']);
+        }
+
+        foreach (explode(',', $oldTags) as $oldTag) {
+            $mockPipeline
+                ->shouldReceive('srem')
+                ->once()
+                ->withArgs([Redis::PREFIX_TAG_IDS.$oldTag, 'REQEST_id']);
+        }
+
+        $mockPipeline
+            ->shouldReceive('exec')
+            ->once()
+            ->withNoArgs();
+
+        // Mocks pipeline object within a callback
+        $this->mockClient
+            ->shouldReceive('pipeline')
+            ->once()
+            ->with(\Mockery::on(static function ($argument) use ($mockPipeline) {
+                $argument($mockPipeline);
+
+                return true;
+            }));
+
+        $backend = new Redis(
+            ['compression_lib' => 'gzip', 'compress_threshold' => '1', 'auto_expire_lifetime' => 1000],
+            $this->mockFactory,
+            $mockDateTime
+        );
+
+        $this->assertTrue($backend->save($data, 'REQEST_id', $tags, null));
+    }
+
+    /**
+     * @throws \Zend_Cache_Exception
+     * @throws \Exception
+     */
+    public function testSaveCorrectlySavesGivenDataWithIdMatchingAutoExpirePatternButBrokenAutoExpireLifetime(): void
+    {
+        $data = 'data';
+        $compressionPrefix = substr('gzip', 0, 2).Redis::COMPRESS_PREFIX;
+        $tags = ['tag1', 'tag2'];
+        $oldTags = 'tag3,tag4';
+
+        $this->mockClient
+            ->shouldReceive('hget')
+            ->once()
+            ->withArgs([Redis::PREFIX_KEY.'REQEST_id', Redis::FIELD_TAGS])
+            ->andReturn($oldTags);
+
+        $mockDateTime = \Mockery::mock(\DateTime::class);
+        $mockDateTime
+            ->shouldReceive('getTimestamp')
+            ->once()
+            ->withNoArgs()
+            ->andReturn(11111);
+
+        $mockPipeline = \Mockery::mock(Pipeline::class);
+        $mockPipeline
+            ->shouldReceive('multi')
+            ->once()
+            ->withNoArgs();
+
+        $mockPipeline
+            ->shouldReceive('hset')
+            ->once()
+            ->withArgs(
+                [
+                    Redis::PREFIX_KEY.'REQEST_id',
+                    Redis::FIELD_DATA,
+                    $compressionPrefix.gzcompress($data, 1),
+                    Redis::FIELD_TAGS,
+                    $compressionPrefix.gzcompress(implode(',', $tags), 1),
+                    Redis::FIELD_MTIME,
+                    11111,
+                    Redis::FIELD_INF,
+                    1,
+                ]
+            );
+
+        $mockPipeline
+            ->shouldNotReceive('expire')
+            ->withAnyArgs();
+
+        $mockPipeline
+            ->shouldReceive('sadd')
+            ->once()
+            ->withArgs([Redis::SET_TAGS, $tags]);
+
+        foreach ($tags as $tag) {
+            $mockPipeline
+                ->shouldReceive('sadd')
+                ->once()
+                ->withArgs([Redis::PREFIX_TAG_IDS.$tag, 'REQEST_id']);
+        }
+
+        foreach (explode(',', $oldTags) as $oldTag) {
+            $mockPipeline
+                ->shouldReceive('srem')
+                ->once()
+                ->withArgs([Redis::PREFIX_TAG_IDS.$oldTag, 'REQEST_id']);
+        }
+
+        $mockPipeline
+            ->shouldReceive('exec')
+            ->once()
+            ->withNoArgs();
+
+        // Mocks pipeline object within a callback
+        $this->mockClient
+            ->shouldReceive('pipeline')
+            ->once()
+            ->with(\Mockery::on(static function ($argument) use ($mockPipeline) {
+                $argument($mockPipeline);
+
+                return true;
+            }));
+
+        $backend = new Redis(
+            ['compression_lib' => 'gzip', 'compress_threshold' => '1', 'auto_expire_lifetime' => -1],
+            $this->mockFactory,
+            $mockDateTime
+        );
+
+        $this->assertTrue($backend->save($data, 'REQEST_id', $tags, null));
     }
 
     /**
@@ -1388,6 +1704,29 @@ final class RedisTest extends TestCase
     /**
      * @throws \Zend_Cache_Exception
      */
+    public function testCleanReturnsTrueOnEmptyTagsAndIncorrectCleanMode(): void
+    {
+        $backend = new Redis([], $this->mockFactory);
+
+        $this->assertTrue($backend->clean('broken'));
+    }
+
+    /**
+     * @throws \Zend_Cache_Exception
+     */
+    public function testCleanThrowsExceptionOnNonEmptyTagsAndIncorrectCleanMode(): void
+    {
+        $backend = new Redis([], $this->mockFactory);
+
+        $this->expectException(\Zend_Exception::class);
+        $this->expectExceptionMessage('Invalid mode for clean() method: broken');
+
+        $backend->clean('broken', ['tag1', 'tag2']);
+    }
+
+    /**
+     * @throws \Zend_Cache_Exception
+     */
     public function testCleanCorrectlyCleanInCleaningModeOld(): void
     {
         $tags = ['tag1', 'tag2'];
@@ -2027,7 +2366,14 @@ final class RedisTest extends TestCase
             ->withArgs([$this->getLuaScripts()['removeByMatchingAnyTags']['code'], count($tags), ...$tags, ...$arguments])
             ->andReturn('');
 
-        $backend = new Redis(['use_lua' => true], $this->mockFactory);
+        $backend = new Redis([
+            'compress_tags' => 1,
+            'compress_data' => 1,
+            'compress_threshold' => -1,
+            'use_lua' => true,
+        ],
+            $this->mockFactory
+        );
 
         $this->assertTrue($backend->clean(\Zend_Cache::CLEANING_MODE_MATCHING_ANY_TAG, $tags));
     }
